@@ -1,0 +1,103 @@
+import customtkinter as ctk
+from tkinter import filedialog, messagebox, simpledialog
+import ai
+
+# Initialize the main window
+ctk.set_appearance_mode("System")  # Modes: "System", "Dark", "Light"
+ctk.set_default_color_theme("blue")  # Themes: "blue", "green", "dark-blue"
+
+root = ctk.CTk()
+root.title("NoteTaker")
+root.geometry("800x600")
+
+# Create a frame for buttons
+button_frame = ctk.CTkFrame(root)
+button_frame.pack(fill="x", padx=10, pady=5, side="top")
+
+# Create a notebook (tabs container)
+notebook = ctk.CTkTabview(root)
+notebook.pack(expand=True, fill="both", padx=10, pady=10)
+
+# Function to create a new tab
+def create_new_tab():
+    frame = ctk.CTkFrame(notebook,width=600, height=300)
+    text_area = ctk.CTkTextbox(frame, wrap="word")
+    text_area.pack(expand=True, fill="both", padx=10, pady=10)
+    notebook.add(frame, text=f"Note {len(notebook.tabs) + 1}")
+
+# Function to save notes from the current tab
+def save_notes():
+    current_tab = notebook.get()
+    if current_tab:
+        text_area = notebook.nametowidget(current_tab).winfo_children()[0]
+        file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
+        if file_path:
+            try:
+                with open(file_path, "w") as file:
+                    file.write(text_area.get("1.0", "end"))
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save notes: {e}")
+
+# Function to import notes into the current tab
+def import_notes():
+    current_tab = notebook.get()
+    if current_tab:
+        text_area = notebook.nametowidget(current_tab).winfo_children()[0]
+        file_path = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
+        if file_path:
+            try:
+                with open(file_path, "r") as file:
+                    content = file.read()
+                text_area.delete("1.0", "end")
+                text_area.insert("1.0", content)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to import notes: {e}")
+
+# Function to close the current tab
+def close_current_tab():
+    current_tab = notebook.get()
+    if current_tab:
+        notebook.delete(current_tab)
+
+# Function to rename the current tab
+def rename_current_tab():
+    current_tab = notebook.get()
+    if current_tab:
+        new_name = simpledialog.askstring("Rename Tab", "Enter new name for the tab:")
+        if new_name:
+            notebook.tab(current_tab, text=new_name)
+
+# Function to organize notes using AI
+def pass_notes_to_ai():
+    current_tab = notebook.get()
+    if current_tab:
+        text_area = notebook.nametowidget(current_tab).winfo_children()[0]
+        notes = text_area.get("1.0", "end")
+        organized_notes = ai.organize_notes(notes)
+        text_area.delete("1.0", "end")
+        text_area.insert("1.0", organized_notes)
+
+# Add buttons for Save, Import, New Tab, Close Tab, and Rename Tab
+save_button = ctk.CTkButton(button_frame, text="Save Notes", command=save_notes)
+save_button.pack(side="left", padx=5)
+
+import_button = ctk.CTkButton(button_frame, text="Import Notes", command=import_notes)
+import_button.pack(side="left", padx=5)
+
+new_tab_button = ctk.CTkButton(button_frame, text="New Tab", command=create_new_tab)
+new_tab_button.pack(side="left", padx=5)
+
+organize_button = ctk.CTkButton(button_frame, text="Organize Notes", command=pass_notes_to_ai)
+organize_button.pack(side="left", padx=5)
+
+close_tab_button = ctk.CTkButton(button_frame, text="Close Tab", command=close_current_tab)
+close_tab_button.pack(side="left", padx=5)
+
+rename_tab_button = ctk.CTkButton(button_frame, text="Rename Tab", command=rename_current_tab)
+rename_tab_button.pack(side="left", padx=5)
+
+# Create the first tab by default
+create_new_tab()
+
+# Run the application
+root.mainloop()

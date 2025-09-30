@@ -1,0 +1,11 @@
+{
+    "CTk": {
+        "fg_color": ["#EBEBEB", "#212121"]
+    },
+    "CTkButton": {
+        "fg_color": ["#3B8ED4", "#1F6AA5"],
+        "hover_color": ["#36719F", "#144870"],
+        "text_color": ["#FFFFFF", "#FFFFFF"]
+    }
+ 
+}

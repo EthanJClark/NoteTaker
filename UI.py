@@ -1,91 +1,216 @@
-import ttkbootstrap
-import tkinter as tk
+import customtkinter as ctk
+import tkinter
 from tkinter import filedialog, messagebox, simpledialog
+import ai
+import json
 
-# Initialize the main window
-root = tk.Tk()
-root.title("NoteTaker")
+
+
+DEFAULT_TEXT = ("Arial", 20)
+
+
+root = ctk.CTk()
+root.title("Burpatron")
 root.geometry("800x600")
-style = ttkbootstrap.Style(theme="journal")
 
-# Configure styles
-style.configure("TNotebook.Tab", font=("TkDefaultFont", 14, "bold"))
+ctk.set_appearance_mode("Dark")
+ctk.set_default_color_theme("green")
+window_bg_color = root.cget("fg_color") 
 
-# Create a frame for buttons and place it at the top
-button_frame = tk.Frame(root)
-button_frame.pack(fill="x", padx=10, pady=5, side="top")
+menu_frame = ctk.CTkFrame(root, height = 100, fg_color=window_bg_color)
+menu_frame.pack(fill = "x", side = "top")
 
-# Create a notebook (tabs container)
-notebook = ttkbootstrap.Notebook(root)
-notebook.pack(expand=True, fill="both", padx=10, pady=10)
+tabview = ctk.CTkTabview(master= root)
+tabview.pack(expand = True, fill = "both",side = "left")
 
-# Function to create a new tab
-def create_new_tab():
-    frame = tk.Frame(notebook)
-    text_area = tk.Text(frame, wrap="word", font=("TkDefaultFont", 12))
-    text_area.pack(expand=True, fill="both", padx=10, pady=10)
-    notebook.add(frame, text=f"Note {len(notebook.tabs()) + 1}")
 
-# Function to save notes from the current tab
-def save_notes():
-    current_tab = notebook.select()
-    if current_tab:
-        text_area = notebook.nametowidget(current_tab).winfo_children()[0]
-        file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
-        if file_path:
-            try:
-                with open(file_path, "w") as file:
-                    file.write(text_area.get("1.0", tk.END))
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to save notes: {e}")
 
-# Function to import notes into the current tab
-def import_notes():
-    current_tab = notebook.select()
-    if current_tab:
-        text_area = notebook.nametowidget(current_tab).winfo_children()[0]
+
+
+
+def optionmenu_callback(choice):
+    print("OptionMenu selected:", choice)
+
+    if "New Note" in choice:
+        create_new_tab()
+    if "Rename" in choice:
+        rename_note()
+    if "Save" in choice:
+        save_notes()
+    if "Import" in choice:
+        import_notes()
+
+    optionmenu.set("File")
+
+optionmenu = ctk.CTkOptionMenu(
+        master=menu_frame,
+        values=[
+            "File",
+            ("Save   Ctrl+S"),
+            "New Note   Ctrl+Tab",
+            "Rename   Ctrl+Space",
+            "Import   Ctrl+I"
+            ],
+        command=optionmenu_callback  # Assign the callback function
+    )
+optionmenu.pack(side="left", padx=5)
+
+optionmenu.set("File")
+
+def rename_note(event = None):
+    
+    old_tab_name = tabview.get()
+    dialog = ctk.CTkInputDialog(text="New name?", title= "Rename",font= DEFAULT_TEXT)
+    tab_name = dialog.get_input()
+    try:
+        tabview._segmented_button._buttons_dict[old_tab_name].configure(text=tab_name)
+    except:
+        pass
+
+def import_notes(event = None):
+    # current_tab = tabview.get()
+    # if current_tab:
+        # textbox = tabview._tab_dict[current_tab].winfo_children()[0]
         file_path = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
         if file_path:
             try:
                 with open(file_path, "r") as file:
                     content = file.read()
-                text_area.delete("1.0", tk.END)
-                text_area.insert("1.0", content)
+
+                tab_name = file_path.split("/")[-1].split("\\")[-1].split(".")[0]
+                create_new_tab(tab_name=tab_name, default_tab=True)
+                current_tab = tabview.get()
+                textbox = tabview._tab_dict[current_tab].winfo_children()[0]
+
+                textbox.delete("1.0", "end")
+                textbox.insert("1.0", content)
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to import notes: {e}")
 
-# Function to close the current tab
-def close_current_tab():
-    current_tab = notebook.select()
+def get_json():
+    with open("existing_files.json") as file:
+        data = json.load(file)
+    return data
+
+
+def update_json(content):
+    try:
+        # Load existing data from the JSON file
+        with open("existing_files.json", "r") as file:
+            data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        # If the file doesn't exist or is invalid, start with an empty dictionary
+        data = {}
+
+    # Add the new content to the existing data
+    data.update(content)
+
+    # Write the updated data back to the JSON file
+    with open("existing_files.json", "w") as file:
+        json.dump(data, file, indent=4)
+
+    print(f"Updated JSON file with: {content}")
+
+def delete_tab(event = None):
+    current_tab = tabview.get()
     if current_tab:
-        notebook.forget(current_tab)
+        result = messagebox.askyesno("Confirmation", "Close Current tab?\n  Data may be lost")
+        if result:
+            tabview.delete(current_tab) 
 
-# Function to rename the current tab
-def rename_current_tab():
-    current_tab = notebook.select()
+def create_new_tab(tab_name = None, event = None, default_tab = False):
+    if not default_tab:
+        dialog = ctk.CTkInputDialog(text="New note name?", title= "New note", font=DEFAULT_TEXT)
+        tab_name = dialog.get_input()
+    
+
+    if tab_name != "" and tab_name != None:
+        tab_1 = tabview.add(tab_name)
+
+        tabview.set(tab_name)
+
+        label_tab1 = ctk.CTkTextbox(master=tab_1, undo = True, wrap = "word", font=("Arial", 20))
+        label_tab1.pack(padx = 10, fill = "both", expand = True)
+
+        # command binds
+        
+        print(tabview._tab_dict.keys())
+
+def save_notes(event = None):
+    files = get_json()
+    print(files)
+    current_tab = tabview.get()  # Get the name of the currently selected tab
     if current_tab:
-        new_name = simpledialog.askstring("Rename Tab", "Enter new name for the tab:")
-        if new_name:
-            notebook.tab(current_tab, text=new_name)
+        # Retrieve the CTkTextbox widget from the current tab
+        textbox = tabview._tab_dict[current_tab].winfo_children()[0]
+        if isinstance(textbox, ctk.CTkTextbox):
+            # Get and print the content of the textbox
+            # content = textbox.get("1.0", "end")  # Get all text from the textbox
+            if current_tab in files:
+                file_path = files[current_tab]
+                if file_path:
+                    try:
+                        with open(file_path, "w") as file:
+                            file.write(textbox.get("1.0", "end"))
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Failed to save notes: {e}")
+            else:
+                new_file_entry = {}
+                file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
+                if file_path != "":
+                    new_file_entry[current_tab] = file_path
+                    update_json(new_file_entry)
+                    if file_path:
+                        try:
+                            with open(file_path, "w") as file:
+                                file.write(textbox.get("1.0", "end"))
+                        except Exception as e:
+                            messagebox.showerror("Error", f"Failed to save notes: {e}")
 
-# Add buttons for Save, Import, New Tab, Close Tab, and Rename Tab
-save_button = ttkbootstrap.Button(button_frame, text="Save Notes", command=save_notes, bootstyle="primary")
-save_button.pack(side="left", padx=5)
 
-import_button = ttkbootstrap.Button(button_frame, text="Import Notes", command=import_notes, bootstyle="success")
-import_button.pack(side="left", padx=5)
 
-new_tab_button = ttkbootstrap.Button(button_frame, text="New Tab", command=create_new_tab, bootstyle="secondary")
-new_tab_button.pack(side="left", padx=5)
 
-close_tab_button = ttkbootstrap.Button(button_frame, text="Close Tab", command=close_current_tab, bootstyle="danger")
-close_tab_button.pack(side="left", padx=5)
+def call_ai():
+    current_tab = tabview.get()  # Get the name of the currently selected tab
+    if current_tab:
+        # Retrieve the CTkTextbox widget from the current tab
+        textbox = tabview._tab_dict[current_tab].winfo_children()[0]
+        notes = (textbox.get("1.0", "end"))
+        organized_notes = ai.organize_notes(notes)
+        textbox.delete("1.0", "end")
+        textbox.insert("1.0", organized_notes)
 
-rename_tab_button = ttkbootstrap.Button(button_frame, text="Rename Tab", command=rename_current_tab, bootstyle="info")
-rename_tab_button.pack(side="left", padx=5)
+def custom_call_ai(event = None):
+    current_tab = tabview.get()  # Get the name of the currently selected tab
+    dialog = ctk.CTkInputDialog(text="How can I tweak your writing?", title= "AI assistant",font=DEFAULT_TEXT)
+    prompt = dialog.get_input()
 
-# Create the first tab by default
-create_new_tab()
+    if current_tab:
+        # Retrieve the CTkTextbox widget from the current tab
+        textbox = tabview._tab_dict[current_tab].winfo_children()[0]
+        notes = (textbox.get("1.0", "end"))
+        organized_notes = ai.custom_prompt(notes, prompt)
+        textbox.delete("1.0", "end")
+        textbox.insert("1.0", organized_notes)
 
-# Run the application
+
+organize_button = ctk.CTkButton(menu_frame, text="Organize", command=call_ai, width=75)
+organize_button.pack(side="left", padx=3)
+
+rewrite_button = ctk.CTkButton(menu_frame, text="Writing Assist", command=custom_call_ai, width=75)
+rewrite_button.pack(side="left", padx=3)
+
+close_button = ctk.CTkButton(master= menu_frame,text="Close", width=75, command=delete_tab)
+close_button.pack(side="right", padx=5)
+
+
+root.bind("<Control-s>", save_notes)
+root.bind("<Control-Tab>", create_new_tab)
+root.bind("<Control-r>", rename_note)
+root.bind("<Control-i>", import_notes)
+root.bind("<Control-space>", custom_call_ai)
+root.bind("<Escape>", delete_tab)
+
+
+
 root.mainloop()
