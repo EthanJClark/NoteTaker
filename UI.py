@@ -10,7 +10,7 @@ DEFAULT_TEXT = ("Arial", 20)
 
 
 root = ctk.CTk()
-root.title("Burpatron")
+root.title("EasyNotes")
 root.geometry("800x600")
 
 ctk.set_appearance_mode("Dark")
