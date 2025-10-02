@@ -15,6 +15,9 @@ Easy Notes is a lightweight, distraction-free notepad built for speed and simpli
 
 - custom Ollama model, currently runs on a lightweight model for quick use
 - Custom themes
+- Font customization
+- Potential Streamlit UI
+- Markdown Format
 
 ---
 
