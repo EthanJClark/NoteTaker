@@ -28,7 +28,7 @@ Easy Notes is a lightweight, distraction-free notepad built for speed and simpli
 
 <!-- Replace with actual screenshots from your project -->
 <img src="https://github.com/EthanJClark/NoteTaker/blob/main/Screenshot%202025-10-01%20231337.png" alt="Dashboard Screenshot" width="700">
-<img src="https://placehold.co/800x400?text=Editing+Notes" alt="Editing Notes Screenshot" width="700">
+
 
 ---
 
